@@ -45,6 +45,7 @@ $tmp = addslashes($pass);
 
 if(strlen($tmp) != strlen($pass)){
 echo "ERROR 6: Que no me intentes hackear con la pass, tonto";
+exit();
 }
 
 $pass = md5($tmp);
@@ -52,6 +53,7 @@ $tmp = addslashes($name);
 
 if(strlen($tmp) != strlen($name)){
 echo "ERROR 7: Que no me intentes hackear con el name, tonto";
+exit();
 }
 
 $name = $tmp;
@@ -59,6 +61,7 @@ $tmp = addslashes($surname);
 
 if(strlen($tmp) != strlen($surname)){
 echo "ERROR 8: Que no me intentes hackear con el surname, tonto";
+exit();
 }
 
 $surname = $tmp;
