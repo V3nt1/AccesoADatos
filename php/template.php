@@ -3,10 +3,29 @@
 function showHeader ($title)
 {
 
+$logout_link = "";
+$register_link = "";
+$admin_link = "";
+
+if(isset($_SESSION["id_user"])){
+$logout_link = <<<EOD
+	<li><a href="logout.php">Logout</a></li>
+EOD;
+if($_SESSION["id_user"] == 1){
+$admin_link = <<<EOD
+	<li><a href="admin.php">Admin</a></li>
+EOD;
+}
+}else{
+$register_link = <<<EOD
+<li><a href="register.php">Registro</a></li>
+EOD;
+}
 echo <<<EOD
 <html>
 
 <head>
+<link rel="stylesheet" href="estilo.css">
 <title>{$title}</title>
 </head>
 
@@ -19,7 +38,9 @@ echo <<<EOD
 <ul>
 <li><a href="index.php">Home</a></li>
 <li><a href="tienda.php">Tienda</a></li>
-<li><a href="register.php">Registro</a></li>
+{$register_link}
+{$logout_link}
+{$admin_link}
 </ul>
 </nav>
 EOD;

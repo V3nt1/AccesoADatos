@@ -1,5 +1,17 @@
 <?php
 
+session_start();
+
+if(!isset($_SESSION["id_user"])){
+echo "Inicia sesion";
+exit();
+}
+
+if($_SESSION["id_user"] != 1){
+echo "Usuario incorrecto";
+exit();
+}
+
 if(!isset($_POST["product"]) || !isset($_POST["description"]) || !isset($_POST["price"]) || !isset($_POST["reference"]) || !isset($_POST["website"]) || !isset($_POST["id_group"]) || !isset($_POST["id_engine_version"])){
 echo "ERROR 1: Formulario mal rellenado";
 exit();
@@ -24,7 +36,7 @@ INSERT INTO products (product, description, price, reference, discount, units_so
 VALUES ('{$product}','{$description}',{$price},'{$reference}',0,0,'{$website}',0,0,'0000-00-00',{$id_group},{$id_engine_version});
 
 EOD;
-
+echo $query;
 require("config.php");
 
 $conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
@@ -41,5 +53,8 @@ echo "ERROR 3: Query mal formada";
 exit();
 }
 
-echo "Producto añadido exitosamente!";
+$id_product = mysqli_insert_id($conn);
+
+header("Location: tienda.php?id_product=".$id_product);
+exit();
 ?>

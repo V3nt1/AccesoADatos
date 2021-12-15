@@ -76,6 +76,6 @@ session_start();
 
 $_SESSION['id_user'] = $user["id_user"];
 
-echo "Felicidades";
-
+header("Location: index.php");
+exit();
 ?>

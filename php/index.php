@@ -7,7 +7,7 @@ require("template.php");
 
 $conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
 if(!isset($_SESSION["id_user"])){
-	$content = <<<EOD
+$content = <<<EOD
 <form method="post" action="login_req.php">
 <h2>¡Identificate!</h2>
 
@@ -19,12 +19,12 @@ if(!isset($_SESSION["id_user"])){
 
 EOD;
 }else{
-	$query = "SELECT * FROM users WHERE id_user=".$_SESSION["id_user"];
+$query = "SELECT * FROM users WHERE id_user=".$_SESSION["id_user"];
 
-	$res = $conn->query($query);
-	$user = $res->fetch_assoc();
+$res = $conn->query($query);
+$user = $res->fetch_assoc();
 
-	$content = "Bienvenido/a ".$user["user"];
+$content = "<p>Bienvenido/a </p> ".$user["user"];
 }
 
 showHeader("ENTIenda: HOME");

@@ -1,0 +1,42 @@
+
+body{
+margin:0;
+padding:0;
+}
+header,footer{
+width:100%;
+background-color: #000;
+color:#fff;
+}
+h1{
+margin:0;
+padding:8px;
+}
+nav{
+background-color:#ccc;
+}
+nav ul{
+display:flex;
+padding:0;
+margin:0;
+justify-content:center;
+}
+nav li{
+list-style:none;
+padding:8px;
+}
+nav a{
+color:#000;
+}
+#product-form p{
+display:flex;
+flex-direction:column;
+}
+main{
+width:80%;
+margin-left:10%;
+}
+footer{
+text-align:center;
+padding:8px;
+}

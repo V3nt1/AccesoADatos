@@ -42,7 +42,39 @@ else if($res->num_rows == 1){
 
 $prod = $res->fetch_assoc();
 
+$admin_link = "";
+$buy_link = "";
+if(isset($_SESSION["id_user"])){
+	if($_SESSION["id_user"] == 1){
+	$admin_link = <<<EOD
+<p>[<a href="admin.php?id_product={$prod["id_product"]}">EDITAR</a>]</p>
+
+EOD;
+	}
+	else{
+	$query = <<<EOD
+	SELECT * FROM users_products WHERE id_user={$_SESSION["id_user"]} AND id_product={$prod["id_product"]};
+EOD;
+	
+	$res = $conn->query($query);
+	if($res){
+		if($res->num_rows == 0){
+			$buy_link = <<<EOD
+			<form method="post" action="buy_req.php">
+			<input type="hidden" name="id_product" value="{$prod["id_product"]}" />
+			<p><input type="submit" value="Comprar" /></p>
+			</form>
+EOD;
+		}else{
+			$buy_link = "<p>COMPRADO!!</p>";
+		}
+	}
+	}
+}
+
 $content = <<<EOD
+	{$admin_link}
+	{$buy_link}
 	<h2>Nombre del producto: {$prod["product"]}</h2>
 	<p><strong>Descripcion:</strong> {$prod["description"]}</p>
 	<p><strong>Precio:</strong> {$prod["price"]}</p>

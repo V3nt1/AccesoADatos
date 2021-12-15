@@ -89,22 +89,13 @@ echo "ERROR 10: Query mal formada";
 exit();
 }
 
-$query = <<<EOD
-SELECT * FROM users WHERE email='{$email}';
-EOD;
-
-$res = $conn->query($query);
-
-if(!$res){
-echo "ERROR 10: Query mal formada";
-exit();
-}
-
-$user = $res->fetch_assoc();
+$id_user = mysqli_insert_id($conn);
 
 session_start();
 
-$_SESSION["id_user"] = $user["id_user"];
+$_SESSION["id_user"] = $id_user;
 
-echo "Usuario registrado con éxito";
+header("Location: index.php");
+exit();
+
 ?>
