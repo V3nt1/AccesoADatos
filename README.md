@@ -76,7 +76,7 @@ EOD;
 ?>
 ```
 
-Como bien dice su nombre, **Template.php** es la base de todos nuestros scripts.
+Como bien dice su nombre, ```Template.php``` es la base de todos nuestros scripts.
 En él se recogen 3 funciones muy importantes, a las que le pasaremos como parámetro el contenido que queremos que tenga nuestra página en todo momento.
 Para utilizarlo, solo se necesita hacer un ```require("template.php")``` y llamar a sus funciones.
 
@@ -97,45 +97,6 @@ $db = "entienda";
 Este no se puede ver en ningún lugar de la página ya que solo lo utilizamos como 'retenedor de información'. 
 
 Lo llamaremos con ```require("config.php")``` ya que contiene toda la información necesaria para poder realizar una conexión a nuestra base de datos.
-
-## Admin.php
-
-### Vista de la página
-
-![image](https://user-images.githubusercontent.com/77392609/146653847-41358707-2591-460a-a553-4b3e72609087.png)
-
-### Funcionamiento
-
-```php
-<?php
-require("template.php");
-
-session_start();
-
-if(!isset($_SESSION["id_user"])){
-	echo "Es obligatorio identificarse!";
-	exit();
-}
-
-if(intval($_SESSION["id_user"]) != 1){
-	echo "No tienes permiso para estar aqui!";
-	exit();
-}
-
-$content = <<<EOD
-<p><a href="product.php">Insert product</a></p>
-<p><a href="groups.php">Insert group</a></p>
-EOD;
-showHeader("ENTIenda ADMIN");
-showContent($content);
-showFooter();
-
-?>
-```
-
-**Este documento solo es accesible por aquel user cuyo id en la base de datos de users sea el primero, es decir, 1.**
-
-En él, además de algunas comprobaciones como ver si el usuario ha iniciado sesión, y si el usuario que trata de acceder es root, encontramos un pequeño 'Hub' que permite al admin insertar un nuevo producto o crear un nuevo grupo.
 
 ## Index.php
 
@@ -184,7 +145,7 @@ showFooter();
 
 ?>
 ```
-Index.php es el home de nuestra ENTIenda.
+```Index.php``` es el home de nuestra ENTIenda.
 
 En él, el usuario, si es nuevo, deberá logearse para poder utilizar las funciones de nuestra página web; ya que en caso contrario no le permitirá realizar ninguna acción.
 
@@ -280,7 +241,7 @@ exit();
 ?>
 ```
 
-Login_req.php es el formulario encargado de recibir y procesar la información que envia index.php al mandar el formulario de inicio de sesión.
+```Login_req.php``` es el formulario encargado de recibir y procesar la información que envia index.php al mandar el formulario de inicio de sesión.
 
 Vamos a ir viendo poco a poco las comprobaciones que realiza para asegurarse de que la información recibida no sea maliciosa y/o incorrecta:
 
@@ -319,7 +280,427 @@ Además de todo esto, manualmente también podemos hacer ciertas comprobaciones 
 
 Tras haber realizado todas estas comprobaciones y asegurarnos de que la información recibida es correcta, haremos un md5 a la contraseña del usuario para cifrarla y posteriormente haremos la conexión pertinente a la base de datos comprobar que el usuario existe en nuestra tabla de users. En caso de que exista, iniciaremos su sesión y en caso de que no, pondremos el error pertinente para informarle de que la información dada no es correcta.
 
+## Logout.php
+
+### Funcionamiento
+
+```php
+<?php
+
+session_start();
+
+$_SESSION["id_user"] = 0;
+
+session_destroy();
+
+header("Location: index.php");
+
+exit();
+?>
+```
+
+El funcionamiento de logout es bastante sencillo: se inicia una sesión y se setea el id del usuario conectado a 0 (usuario que es imposible que exista ya que los ids empiezan a partir del 1), y a continuación se destruye la sesión y se manda al usuario a la página de login.
+
+## Register.php
+
+### Vista de la página
+
+![image](https://user-images.githubusercontent.com/77392609/146655704-f44d7aa7-f759-4696-85f7-7f73d3dd9c17.png)
+
+### Funcionamiento 
+
+```php
+<?php
+session_start();
+
+require("config.php");
+require("template.php");
+
+$content = <<<EOD
+<form method="post" action="register_req.php">
+<h2>¡Registrate!</h2>
+<p><label for="register-user">Usuario:</label><input type="text" name="user" id="register-user"/></p>
+<p><label for="register-pass">Password:</label><input type="password" name="pass" id="register-pass"/></p>
+<p><label for="register-confirmpass">Confirm password:</label><input type="password" name="repass" id="register-repass"/></p>
+<p><label for="register-name">Name:</label><input type="text" name="name" id="register-name"/></p>
+<p><label for="register-surname">Surname:</label><input type=text" name="surname" id="register-surname"/></p>
+<p><label for="register-email">Email:</label><input type="email" name="email" id="register-email"/></p>
+<p><label for="register-birthday">Birthday:</label><input type="date" name="birthday" id="register-birthday"/></p>
+<p><input type="submit" id="register-submit" value="Register"/></p>
+</form>
+EOD;
+
+showHeader("ENTIenda: Register");
+showContent($content);
+showFooter();
+
+?>
+```
+
+La página de ```register.php```, como su propio nombre indica, contiene un formulario cuyos campos son los necesarios para efectuar correctamente un registro de nuevo usuario en nuestra base de datos. Todos los datos serán enviados posteriormente a ```register_req.php``` para procesarlos.
+
+## Register_req.php
+
+### Funcionamiento
+
+```php
+<?php
+
+if(!isset($_POST["user"]) || !isset($_POST["pass"]) || !isset($_POST["repass"]) || !isset($_POST["name"]) || !isset($_POST["surname"]) || !isset($_POST["email"]) || !isset($_POST["birthday"])){
+echo "ERROR 1: No se han rellenado todos los campos";
+
+exit();
+}
+
+$user = trim($_POST["user"]);
+if(strlen($user) <= 2){
+echo "ERROR 2: Usuario mal formado";
+exit();
+}
+
+$pass = trim($_POST["pass"]);
+if(strlen($pass) <= 3){
+echo "ERROR 3: Contraseña mal formada";
+exit();
+}
+
+$repass = trim($_POST["repass"]);
+
+if($pass != $repass){
+echo "ERROR 4: Las contraseñas no coinciden";
+exit();
+}
+
+$name = trim($_POST["name"]);
+
+$surname = trim($_POST["surname"]);
+
+$email = trim($_POST["email"]);
+
+$birthday = trim($_POST["birthday"]);
+
+$tmp = addslashes($user);
+
+if(strlen($tmp) != strlen($user)){
+echo "ERROR 5: Que no me intentes hackear con el username, tonto";
+exit();
+}
+
+$user = $tmp;
+$tmp = addslashes($pass);
+
+if(strlen($tmp) != strlen($pass)){
+echo "ERROR 6: Que no me intentes hackear con la pass, tonto";
+exit();
+}
+
+$pass = md5($tmp);
+$tmp = addslashes($name);
+
+if(strlen($tmp) != strlen($name)){
+echo "ERROR 7: Que no me intentes hackear con el name, tonto";
+exit();
+}
+
+$name = $tmp;
+$tmp = addslashes($surname);
+
+if(strlen($tmp) != strlen($surname)){
+echo "ERROR 8: Que no me intentes hackear con el surname, tonto";
+exit();
+}
+
+$surname = $tmp;
+
+$query = <<<EOD
+INSERT INTO users (user, password, email, name, surname, birthdate)
+VALUES ('{$user}','{$pass}','{$email}','{$name}','{$surname}','{$birthday}');
+EOD;
+
+require("config.php");
+
+$conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
+
+if(!$conn){
+echo "ERROR 9: Mala conexión con la entienda";
+exit();
+}
+
+$res = $conn->query($query);
+
+if(!$res){
+echo "ERROR 10: Query mal formada";
+exit();
+}
+
+$id_user = mysqli_insert_id($conn);
+
+session_start();
+
+$_SESSION["id_user"] = $id_user;
+
+header("Location: index.php");
+exit();
+
+?>
+```
+
+El funcionamiento de register_req.php es muy parecido al de ```login_req.php```, ya que comprobamos que todos los campos han sido cumplimentados correctamente gracias a las funciones de isset, trim y addslashes y además añadimos algunas comprobaciones extra como por ejemplo que la contraseña y la confirmación de contraseña sean iguales.
+
+La principal diferencia entre ambos scripts, es que este en lugar de buscar al usuario en la tabla de users, lo inserta, generando así un nuevo usuario que posteriormente podrá logearse en nuestra página web con el usuario y contraseña que haya especificado en su registro.
+
+## Admin.php
+
+### Vista de la página
+
+![image](https://user-images.githubusercontent.com/77392609/146653847-41358707-2591-460a-a553-4b3e72609087.png)
+
+### Funcionamiento
+
+```php
+<?php
+require("template.php");
+
+session_start();
+
+if(!isset($_SESSION["id_user"])){
+	echo "Es obligatorio identificarse!";
+	exit();
+}
+
+if(intval($_SESSION["id_user"]) != 1){
+	echo "No tienes permiso para estar aqui!";
+	exit();
+}
+
+$content = <<<EOD
+<p><a href="product.php">Insert product</a></p>
+<p><a href="groups.php">Insert group</a></p>
+EOD;
+showHeader("ENTIenda ADMIN");
+showContent($content);
+showFooter();
+
+?>
+```
+
+**Este documento solo es accesible por aquel user cuyo id en la base de datos de users sea el primero, es decir, 1.**
+
+En él, además de algunas comprobaciones como ver si el usuario ha iniciado sesión, y si el usuario que trata de acceder es root, encontramos un pequeño 'Hub' que permite al admin insertar un nuevo producto o crear un nuevo grupo.
+
+## Groups.php
+
+### Vista de la página
+
+![image](https://user-images.githubusercontent.com/77392609/146655833-f849a8eb-4dad-46ab-9ce5-4321a04aea16.png)
+
+### Funcionamiento
+
+```php
+<?php
+require("template.php");
+
+session_start();
+
+if(!isset($_SESSION["id_user"])){
+echo "Es obligatorio identificarse!";
+exit();
+}
+
+if(intval($_SESSION["id_user"]) != 1){
+echo "No tienes permiso para estar aqui!";
+exit();
+}
 
 
+$content = "";
+$content = <<<EOD
+<form method="post" action="groups_req.php" id="group_form">
+<h2>Inserción de nuevo grupo</h2>
+<p><label for="group">Group</label><input type="text" name="group" id="group" /></p>
+<p><label for="course">Course</label><input type="text" name="course" id="course" /></p>
+<p><label for="jamyear">Jam Year</label><input type="text" name="jamyear" id="jamyear" /></p>
+<p><label for="mark">Mark</label><input type="text" name="mark" id="mark" /></p>
+<p><input type="submit" value="Create group"/></p>
+EOD;
+
+showHeader("ENTIenda ADMIN - GROUPS");
+showContent($content);
+showFooter();
+?>
+```
+
+La página de groups.php es una de las 2 que es única y exclusivamente accesible si eres root.
+
+Esta contiene un formulario que permite al administrador de la página web inscribir a un nuevo grupo de creadores de juegos en nuestra web. La información será procesada por ```groups_req.php```
+
+## Groups_req.php
+
+### Funcionamiento
+
+```php
+<?php
 
 
+if(!isset($_POST["group"]) || !isset($_POST["course"]) || !isset($_POST["jamyear"]) || !isset($_POST["mark"])){
+echo "ERROR 1: No se han rellenado todos los campos";
+
+exit();
+}
+
+$group = trim($_POST["group"]);
+$course = trim($_POST["course"]);
+$jamyear = trim($_POST["jamyear"]);
+$mark = trim($_POST["mark"]);
+
+$query = <<<EOD
+INSERT INTO groups (`group`, course, jam_year, mark)
+VALUES ('{$group}',{$course},'{$jamyear}',{$mark});
+EOD;
+
+require("config.php");
+
+$conn = mysqli_connect($db_server,$db_user,$db_pass, $db);
+
+if(!$conn){
+echo "ERROR: No se ha podido conectar a la base de datos";
+exit();
+}
+
+$res = $conn->query($query);
+echo $query;
+if(!$res){
+echo "ERROR: Query mal formada";
+exit();
+}
+
+Header("Location: admin.php");
+?>
+```
+
+En general, todos los scripts que acaban en ```_req.php``` tienen un funcionamiento muy similar entre ellos, solo que el procesamiento de la información de cara a la base de datos varia en la tabla en la que se trabaja y si es inserción o seleccion de datos.
+
+En este caso, lo que estamos haciendo es recoger la información del formulario en ```groups.php``` mediante POST, procesarla y a continuación insertarla en nuestra tabla de groups para que después se pueda utilizar en nuestra siguiente página: ```product.php```.
+
+## Product.php
+
+### Vista de la página
+
+· Especificando producto
+
+![image](https://user-images.githubusercontent.com/77392609/146655995-b786d595-0d5e-4ec4-ad3e-581e22c4d65b.png)
+
+· Sin especificar
+
+![image](https://user-images.githubusercontent.com/77392609/146655999-8421f949-b815-41e6-bd77-7d8296c15f4d.png)
+
+### Funcionamiento
+```php
+<?php
+
+require("template.php");
+
+$content = "";
+
+$id_product = 0;
+
+require("config.php");
+
+
+if(isset($_GET["id_product"])){
+$id_product = intval($_GET["id_product"]);
+}
+
+$conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
+
+$query = <<<EOD
+SELECT * FROM groups;
+EOD;
+
+$res = $conn->query($query);
+
+$groups = "";
+$engines = "";
+
+while($prod = $res->fetch_assoc()){
+
+$groups .= <<<EOD
+	<option value="{$prod["id_group"]}">{$prod["group"]}</option>
+EOD;
+}
+
+$query = <<<EOD
+SELECT * FROM engines;
+EOD;
+
+$res = $conn->query($query);
+
+while($prod = $res->fetch_assoc()){
+$engines .= <<<EOD
+<option value="{$prod["id_engine"]}">{$prod["engine"]}</option>
+EOD;
+}
+if($id_product == 0){
+$content = <<<EOD
+<form method="post" action="product_insert.php" id="product-form">
+<h2>Inserción de nuevo producto</h2>
+<p><label for="product">Product</label><input type="text" name="product" id="product" /></p>
+<p><label for="description">Description</label><input type="text" name="description" id="description" /></p>
+<p><label for="price">Price</label><input type="text" name="price" id="price" /></p>
+<p><label for="reference">Reference</label><input type="text" name="reference" id="reference" /></p>
+<p><label for="website">Website</label><input type="text" name="website" id="website" /></p>
+<p>Groups</p>
+<select name="id_group">{$groups}</select>
+<p>Engines</p>
+<select name="id_engine_version">{$engines}</select>
+<p><input type="submit" /></p>
+</form>
+EOD;
+}else{	
+	require("config.php");
+	$conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
+
+	$query = <<<EOD
+	SELECT * FROM products WHERE id_product={$id_product};
+EOD;
+
+$res = $conn->query($query);
+
+if(!$res){
+echo "Mala query";
+exit();
+}
+
+if($res->num_rows !=1){
+echo "Error, producto erroneo";
+exit();
+}
+
+$prod = $res->fetch_assoc();
+
+$content = <<<EOD
+<form method="post" action="product_update_req.php" id="product-form">
+<input type="hidden" name="id_product" value="{$prod["id_product"]}" />
+<h2>Actualización de producto</h2>
+<p><label for="product">Product</label><input type="text" name="product" id="product" value="{$prod["product"]}"/></p>
+<p><label for="description">Description</label><input type="text" name="description" id="description" value="{$prod["description"]}"/></p>
+<p><label for="price">Price</label><input type="text" name="price" id="price" value="{$prod["price"]}"/></p>
+<p><label for="reference">Reference</label><input type="text" name="reference" id="reference" value="{$prod["reference"]}" /></p>
+<p><label for="website">Website</label><input type="text" name="website" id="website" value="{$prod["website"]}"/></p>
+<p><label for="id_group">ID Group</label><input type="text" name="id_group" id="id_group" value="{$prod["id_group"]}"/></p>
+<p><label for="id_engine_version">ID Engine Version</label><input type="text" name="id_engine_version" id="id_engine_version" /value="{$prod["id_engine_version"]}"></p>
+<p><input type="submit" /></p>
+</form>
+EOD;
+
+}
+showHeader("ENTIenda ADMIN");
+showContent($content);
+showFooter();
+
+?>
+```
+
+Esta página si que contiene algo más de miga que las anteriores ya que se le puede dar 2 usos.
+- Indicando un producto en su url añadiendo ```?id_product=x``` al final:
+Si se indica un número de producto en la url, en lugar de insertar un producto lo que se estará haciendo es EDITAR el producto que se haya escogido.
