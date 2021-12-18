@@ -702,5 +702,312 @@ showFooter();
 ```
 
 Esta página si que contiene algo más de miga que las anteriores ya que se le puede dar 2 usos.
-- Indicando un producto en su url añadiendo ```?id_product=x``` al final:
-Si se indica un número de producto en la url, en lugar de insertar un producto lo que se estará haciendo es EDITAR el producto que se haya escogido.
+- **Indicando un producto en su url añadiendo ```?id_product=x``` al final:**
+Si se indica un número de producto en la url, en lugar de insertar un producto lo que se estará haciendo es EDITAR el producto que se haya escogido y al enviarse, se procesará en ```product_update_req.php```.
+- **Sin indicar un producto en su url:**
+Si no se indica un número de producto, el formulario se mandará a ```product_insert.php``` y se añadirá a la lista de productos.
+
+Un punto interesante de este script, son los selectores de groups y de engines que se encuentran en los formularios, ya que gracias a un while se recorren las tablas necesarias para poder otorgar a los ```<select></select>``` las ```<option></option>``` necesarias para que estos muestren la información correcta.
+
+## Product_update_req.php
+
+### Funcionamiento
+
+```php
+<?php
+
+session_start();
+
+if(!isset($_SESSION["id_user"])){
+echo "Inicia sesion";
+exit();
+}
+
+if($_SESSION["id_user"] != 1){
+echo "Usuario incorrecto";
+exit();
+}
+
+if(!isset($_POST["id_product"]) || !isset($_POST["product"]) || !isset($_POST["description"]) || !isset($_POST["price"]) || !isset($_POST["reference"]) || !isset($_POST["website"]) || !isset($_POST["id_group"]) || !isset($_POST["id_engine_version"])){
+echo "ERROR 1: Formulario mal rellenado";
+exit();
+}
+
+$id_product = intval(trim($_POST["id_product"]));
+
+$product = trim($_POST["product"]);
+
+$description = trim($_POST["description"]);
+
+$price = trim($_POST["price"]);
+
+$reference = trim($_POST["reference"]);
+
+$website = trim($_POST["website"]);
+
+$id_group = trim($_POST["id_group"]);
+
+$id_engine_version = trim($_POST["id_engine_version"]);
+$query = <<<EOD
+UPDATE products 
+SET product='{$product}', description='{$description}',price={$price},reference='{$reference}',website='{$website}',id_group={$id_group},id_engine_version={$id_engine_version}
+WHERE id_product={$id_product};
+EOD;
+
+require("config.php");
+
+$conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
+
+if(!$conn){
+echo "ERROR 2: No se ha podido conectar con la base de datos.";
+exit();
+}
+
+$res = $conn->query($query);
+
+if(!$res){
+echo "ERROR 3: Query mal formada";
+exit();
+}
+
+header("Location: tienda.php?id_product=".$id_product);
+exit();
+?>
+```
+
+Como he comentado anteriormente, todos los archivos ```_req.php``` mantienen la misma estructura, y es que este funciona exactamente igual que el resto solo que la query lo que hace es actualizar el producto que estemos utilizando con los nuevos datos que le mandemos.
+
+## Product_insert.php
+
+### Funcionamiento
+```php
+<?php
+
+session_start();
+
+if(!isset($_SESSION["id_user"])){
+echo "Inicia sesion";
+exit();
+}
+
+if($_SESSION["id_user"] != 1){
+echo "Usuario incorrecto";
+exit();
+}
+
+if(!isset($_POST["product"]) || !isset($_POST["description"]) || !isset($_POST["price"]) || !isset($_POST["reference"]) || !isset($_POST["website"]) || !isset($_POST["id_group"]) || !isset($_POST["id_engine_version"])){
+echo "ERROR 1: Formulario mal rellenado";
+exit();
+}
+
+$product = trim($_POST["product"]);
+
+$description = trim($_POST["description"]);
+
+$price = trim($_POST["price"]);
+
+$reference = trim($_POST["reference"]);
+
+$website = trim($_POST["website"]);
+
+$id_group = trim($_POST["id_group"]);
+
+$id_engine_version = trim($_POST["id_engine_version"]);
+$query = <<<EOD
+INSERT INTO products (product, description, price, reference, discount, units_sold, website, size, duration, release_date, id_group, id_engine_version)
+VALUES ('{$product}','{$description}',{$price},'{$reference}',0,0,'{$website}',0,0,'0000-00-00',{$id_group},{$id_engine_version});
+EOD;
+echo $query;
+require("config.php");
+
+$conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
+
+if(!$conn){
+echo "ERROR 2: No se ha podido conectar con la base de datos.";
+exit();
+}
+
+$res = $conn->query($query);
+
+if(!$res){
+echo "ERROR 3: Query mal formada";
+exit();
+}
+
+$id_product = mysqli_insert_id($conn);
+
+header("Location: tienda.php?id_product=".$id_product);
+exit();
+?>
+```
+
+```Product_insert.php``` en cambio, en lugar de actualizar el producto lo que hace es añadirlo a la tabla de products, habilitando así su uso y/o compra en ```tienda.php```.
+
+## Tienda.php
+
+### Vista de la página
+
+![image](https://user-images.githubusercontent.com/77392609/146656370-37edd83c-5956-46f0-9bd2-6c44ac5936c2.png)
+
+### Funcionamiento
+
+```php
+<?php
+session_start();
+
+require("config.php");
+require ("template.php");
+
+$conn = mysqli_connect ($db_server, $db_user, $db_pass, $db);
+if(!$conn){
+echo "No se ha podido conectar con la base de datos";
+}
+
+if (isset($_GET["id_product"])){
+	$id_product = intval($_GET["id_product"]);
+
+$query = <<<EOD
+	SELECT * FROM products WHERE id_product={$id_product};
+EOD;
+}
+else{
+$query = <<<EOD
+	SELECT * FROM products;
+EOD;
+}
+$res = $conn->query($query);
+
+$content="";
+
+if($res->num_rows >1){
+
+	while ($prod = $res->fetch_assoc()){
+	 $content .= <<<EOD
+<section>	
+	<h2>{$prod["product"]}</h2>
+	<p><a href="tienda.php?id_product={$prod["id_product"]}">Ver</a></p>
+</section>	
+EOD;
+	
+	}
+
+}
+else if($res->num_rows == 1){
+
+$prod = $res->fetch_assoc();
+
+$admin_link = "";
+$buy_link = "";
+if(isset($_SESSION["id_user"])){
+	if($_SESSION["id_user"] == 1){
+	$admin_link = <<<EOD
+<p>[<a href="admin.php?id_product={$prod["id_product"]}">EDITAR</a>]</p>
+EOD;
+	}
+	else{
+	$query = <<<EOD
+	SELECT * FROM users_products WHERE id_user={$_SESSION["id_user"]} AND id_product={$prod["id_product"]};
+EOD;
+	
+	$res = $conn->query($query);
+	if($res){
+		if($res->num_rows == 0){
+			$buy_link = <<<EOD
+			<form method="post" action="buy_req.php">
+			<input type="hidden" name="id_product" value="{$prod["id_product"]}" />
+			<p><input type="submit" value="Comprar" /></p>
+			</form>
+EOD;
+		}else{
+			$buy_link = "<p>COMPRADO!!</p>";
+		}
+	}
+	}
+}
+
+$content = <<<EOD
+	{$admin_link}
+	{$buy_link}
+	<h2>Nombre del producto: {$prod["product"]}</h2>
+	<p><strong>Descripcion:</strong> {$prod["description"]}</p>
+	<p><strong>Precio:</strong> {$prod["price"]}</p>
+	<p><strong>Referencia:</strong> {$prod["reference"]}</p>
+	<p><strong>Descuento:</strong> {$prod["discount"]}</p>
+	<p><strong>Unidades vendidas:</strong> {$prod["units_sold"]}</p>
+	<p><strong>Pagina Web:</strong> {$prod["website"]}</p>
+	<p><strong>Tamaño:</strong> {$prod["size"]}</p>
+	<p><strong>Duración:</strong> {$prod["duration"]}</p>
+	<p><strong>Fecha de salida:</strong> {$prod["release_date"]}</p>
+	<p><strong>Grupo:</strong> {$prod["id_group"]}</p>
+	<p><strong>Versión del engine:</strong> {$prod["id_engine_version"]}</p>
+EOD;
+}else{
+echo "No hay productos con esa referencia";
+}
+	showHeader("ENTIenda: Tienda");
+	showContent($content);
+	showFooter();
+?>
+```
+La página de ```tienda.php``` es básicamente el core de nuestra web. En ella, el usuario, en caso de ser admin, puede editar los juegos o en caso de no serlo, puede comprarlos.
+
+Este script funciona gracias a una serie de condiciones en las que determinamos qué es lo que se va a mostrar por pantalla:
+- En caso de recibir un numero de producto por GET (es decir, por la URL), la página mostrará ese producto.
+- En caso de no recibir ningun producto concreto, la página mostrará todos los productos disponibles en nuestra tienda.
+- Si el usuario hace click en algun producto, la página que se mostrará será la misma que si se recibe un producto por GET, pero hay una pequeña diferencia entre ser admin y no serlo. En caso de serlo, arriba aparecerá un botón de editar producto:
+
+![image](https://user-images.githubusercontent.com/77392609/146656485-15d5d71d-49ab-40a5-8dfd-d82c7c6b5200.png)
+
+En caso de no serlo, aparecerá un botón de comprar producto, que al ser pulsado se activará el script de ```buy_req.php```.
+
+![image](https://user-images.githubusercontent.com/77392609/146656509-c0427eae-a7c4-4fe9-b23c-1b6c0e7238c1.png)
+
+## Buy_req.php
+
+### Funcionamiento
+
+```php
+<?php
+
+if(!isset($_POST["id_product"])){
+echo "Error: no hay producto";
+exit();
+}
+
+session_start();
+
+if(!isset($_SESSION["id_user"])){
+echo "Error: no hay usuario";
+exit();
+}
+
+$id_product = intval($_POST["id_product"]);
+
+if($id_product == 0){
+echo "Error: producto erróneo";
+exit();
+}
+
+require("config.php");
+
+$conn = mysqli_connect($db_server, $db_user, $db_pass, $db);
+
+$query = <<<EOD
+INSERT INTO users_products (id_user, id_product)
+VALUES ({$_SESSION["id_user"]},{$id_product});
+EOD;
+
+$res = $conn->query($query);
+
+if (!$res){
+echo "Error al insertar producto";
+exit();
+}
+
+header("Location: tienda.php?id_product=".$id_product);
+
+?>
+```
+```buy_req.php``` seria nuestro equivalente a una cesta de la compra. Este script es el encargado de añadir a la tabla de productos obtenidos por el user el producto en el que el usuario haya dado click al botón de comprar. Una vez comprado, la pantalla que le saldrá al usuario será esta:
+
+![image](https://user-images.githubusercontent.com/77392609/146656569-bb2f5dec-b066-4a0e-a253-fe7f862a302b.png)
